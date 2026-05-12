@@ -1,0 +1,6 @@
+[Unit]
+Description=Copilot CO₂ estimator
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/copilot-co2.sh
