@@ -28,7 +28,12 @@ function extract_tokens() {
     local _file="${1}"
     local _offset="${2}"
 
-    tail -c +"$(( _offset + 1 ))" "${_file}" 2>/dev/null | \
+    local _sum=0
+    local _n
+    while IFS= read -r _n; do
+        (( _sum += _n ))
+    done < <(
+        tail -c +"$(( _offset + 1 ))" "${_file}" 2>/dev/null | \
         jq -r '
             [ .resourceSpans[]?
               | select(.resource.attributes[]?
@@ -43,9 +48,9 @@ function extract_tokens() {
               | (.value.intValue // .value.stringValue // "0")
               | tonumber
             ] | add // 0
-        ' 2>/dev/null | \
-        paste -sd+ - | \
-        bc 2>/dev/null || echo 0
+        ' 2>/dev/null
+    )
+    echo "${_sum}"
 }
 
 function load_state() {
@@ -118,7 +123,7 @@ function main() {
     local _new_co2
     _new_co2=$(echo "scale=4; ${_new_tokens} * ${kwh_per_1k_tokens} / 1000 * ${co2_grams_per_kwh}" | bc)
 
-    cumulative_tokens=$(echo "${cumulative_tokens} + ${_new_tokens}" | bc)
+    cumulative_tokens=$(( cumulative_tokens + _new_tokens ))
     cumulative_co2=$(echo "scale=4; ${cumulative_co2} + ${_new_co2}" | bc)
 
     save_state
