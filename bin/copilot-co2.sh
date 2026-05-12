@@ -14,6 +14,9 @@ display_file="${state_dir}/co2-state.txt"
 kwh_per_1k_tokens=0.003
 co2_grams_per_kwh=390  # EU average 2024
 
+# Tree absorption: ~22 kg CO₂/year for a mature broadleaf tree
+tree_absorption_grams_per_day=$(( 22000 / 365 ))  # ~60 g/day
+
 function check_dependencies() {
     local _cmd
     for _cmd in jq bc; do
@@ -58,10 +61,16 @@ function load_state() {
         cumulative_tokens=$(jq -r '.cumulative_tokens // 0' "${state_file}")
         cumulative_co2=$(jq -r '.cumulative_co2_grams // 0' "${state_file}")
         last_offset=$(jq -r '.last_offset // 0' "${state_file}")
+        started_at=$(jq -r '.started_at // ""' "${state_file}")
     else
         cumulative_tokens=0
         cumulative_co2=0
         last_offset=0
+        started_at=""
+    fi
+
+    if [[ -z "${started_at}" ]]; then
+        started_at=$(date -Iseconds)
     fi
 }
 
@@ -71,6 +80,7 @@ function save_state() {
   "cumulative_tokens": ${cumulative_tokens},
   "cumulative_co2_grams": ${cumulative_co2},
   "last_offset": ${last_offset},
+  "started_at": "${started_at}",
   "last_updated": "$(date -Iseconds)"
 }
 EOF
@@ -79,21 +89,53 @@ EOF
 function update_display() {
     local _grams="${cumulative_co2}"
     local _int_grams
-    local _display
+    local _co2_display
 
     _int_grams=${_grams%%.*}
     _int_grams=${_int_grams:-0}
 
     if (( _int_grams >= 1000 )); then
-        _display=$(echo "scale=1; ${_grams} / 1000" | bc)
-        echo "${_display}kg CO₂" > "${display_file}"
+        _co2_display=$(echo "scale=1; ${_grams} / 1000" | bc)
+        _co2_display="${_co2_display}kg"
     elif (( _int_grams >= 1 )); then
-        _display=$(echo "scale=1; ${_grams}" | bc)
-        echo "${_display}g CO₂" > "${display_file}"
+        _co2_display=$(echo "scale=1; ${_grams}" | bc)
+        _co2_display="${_co2_display}g"
     else
-        _display=$(echo "scale=1; ${_grams} * 1000" | bc)
-        echo "${_display}mg CO₂" > "${display_file}"
+        _co2_display=$(echo "scale=1; ${_grams} * 1000" | bc)
+        _co2_display="${_co2_display}mg"
     fi
+
+    # Calculate trees needed to match daily average emission rate
+    local _now
+    local _start_epoch
+    local _now_epoch
+    local _days_elapsed
+    local _trees
+
+    _now=$(date -Iseconds)
+    _start_epoch=$(date -d "${started_at}" +%s)
+    _now_epoch=$(date -d "${_now}" +%s)
+    _days_elapsed=$(( (_now_epoch - _start_epoch) / 86400 ))
+
+    if (( _days_elapsed < 1 )); then
+        _days_elapsed=1
+    fi
+
+    local _daily_avg_grams
+    _daily_avg_grams=$(echo "scale=2; ${_grams} / ${_days_elapsed}" | bc)
+
+    _trees=$(echo "scale=0; (${_daily_avg_grams} + ${tree_absorption_grams_per_day} - 1) / ${tree_absorption_grams_per_day}" | bc)
+
+    if (( _trees < 1 )); then
+        _trees=1
+    fi
+
+    local _tree_label="trees"
+    if (( _trees == 1 )); then
+        _tree_label="tree"
+    fi
+
+    echo "♨ ${_co2_display} CO₂ · 🌳 ${_trees} ${_tree_label}" > "${display_file}"
 }
 
 function main() {

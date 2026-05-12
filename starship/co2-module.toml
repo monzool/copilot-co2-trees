@@ -1,5 +1,5 @@
 [custom.co2]
 command = "cat ~/.local/share/copilot-otel/co2-state.txt"
 when = "test -f ~/.local/share/copilot-otel/co2-state.txt"
-format = "🌳 [$output]($style) "
+format = "[$output]($style) "
 style = "green"

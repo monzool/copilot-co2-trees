@@ -55,11 +55,14 @@ function install_collector_config() {
         echo "  ${otelcol_conf} already configured"
     fi
 
-    # Create traces directory writable by the collector service
+    # Create traces directory under the collector's data dir
     sudo mkdir -p "${traces_dir}"
     sudo chown otelcol-contrib:otelcol-contrib "${traces_dir}"
-    sudo chmod 755 "${traces_dir}"
-    echo "  Created ${traces_dir}"
+
+    # Allow current user to read collector output
+    sudo usermod -aG otelcol-contrib "$(whoami)"
+    echo "  Added $(whoami) to otelcol-contrib group"
+    echo "  Note: Log out and back in for group membership to take effect"
 }
 
 function install_user_components() {
