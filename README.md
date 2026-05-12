@@ -31,12 +31,8 @@ wget https://github.com/open-telemetry/opentelemetry-collector-releases/releases
 sudo dpkg -i otelcol-contrib_0.151.0_linux_amd64.deb
 ```
 
-The package installs a system-level service. Disable it — this project runs the
-collector as a user service with its own config:
-
-```bash
-sudo systemctl disable --now otelcol-contrib
-```
+The package installs a system-level service. This project extends that service
+with an additional config fragment — no need to disable it.
 
 Verify: `otelcol-contrib --version`
 
@@ -48,19 +44,28 @@ Verify: `otelcol-contrib --version`
 
 This will:
 
-1. Symlink config, scripts, and systemd units from this repo into your system
-2. Enable and start the collector and CO₂ timer as systemd user services
-3. Print the Starship config snippet to add to your `~/.config/starship.toml`
+1. Symlink the config fragment into `/etc/otelcol-contrib/` and update `OTELCOL_OPTIONS` to load it (requires sudo)
+2. Create the traces directory at `/var/lib/otelcol-contrib/copilot-otel/`
+3. Restart the collector to pick up the new config
+4. Symlink the CO₂ script and timer into user locations
+5. Enable and start the CO₂ timer
+6. Print the Starship config snippet to add to `~/.config/starship.toml`
 
-### What gets symlinked
+### What gets installed
 
-| Source (repo)                | Target                                          |
-|------------------------------|--------------------------------------------------|
-| `bin/copilot-co2.sh`         | `~/.local/bin/copilot-co2.sh`                    |
-| `config/otelcol/config.yaml` | `~/.config/otelcol/config.yaml`                  |
-| `systemd/otelcol.service`    | `~/.config/systemd/user/otelcol.service`         |
-| `systemd/copilot-co2.service`| `~/.config/systemd/user/copilot-co2.service`     |
-| `systemd/copilot-co2.timer`  | `~/.config/systemd/user/copilot-co2.timer`       |
+**System-level (sudo):**
+
+| Source (repo) | Target |
+|---|---|
+| `config/otelcol-contrib/copilot-co2.yaml` | `/etc/otelcol-contrib/copilot-co2.yaml` |
+
+**User-level:**
+
+| Source (repo) | Target |
+|---|---|
+| `bin/copilot-co2.sh` | `~/.local/bin/copilot-co2.sh` |
+| `systemd/copilot-co2.service` | `~/.config/systemd/user/copilot-co2.service` |
+| `systemd/copilot-co2.timer` | `~/.config/systemd/user/copilot-co2.timer` |
 
 ## VS Code Configuration
 
@@ -108,7 +113,7 @@ isn't running — VS Code silently drops the telemetry with no errors.
 
 ```bash
 # Collector
-systemctl --user status otelcol
+sudo systemctl status otelcol-contrib
 
 # CO₂ timer
 systemctl --user status copilot-co2.timer
@@ -117,18 +122,27 @@ systemctl --user status copilot-co2.timer
 cat ~/.local/share/copilot-otel/co2-state.json
 
 # Raw traces
-tail ~/.local/share/copilot-otel/traces.jsonl
+tail /var/lib/otelcol-contrib/copilot-otel/traces.jsonl
 ```
 
 ## Uninstall
 
 ```bash
-systemctl --user stop copilot-co2.timer otelcol
-systemctl --user disable copilot-co2.timer otelcol
-rm ~/.local/bin/copilot-co2.sh
-rm ~/.config/otelcol/config.yaml
-rm ~/.config/systemd/user/{otelcol.service,copilot-co2.service,copilot-co2.timer}
+# Stop and disable the CO₂ timer
+systemctl --user stop copilot-co2.timer
+systemctl --user disable copilot-co2.timer
 systemctl --user daemon-reload
-```
 
-Remove the `[custom.co2]` section from `~/.config/starship.toml`.
+# Remove user symlinks
+rm ~/.local/bin/copilot-co2.sh
+rm ~/.config/systemd/user/copilot-co2.{service,timer}
+
+# Remove collector config fragment and revert OTELCOL_OPTIONS
+sudo rm /etc/otelcol-contrib/copilot-co2.yaml
+sudo sed -i 's| --config=/etc/otelcol-contrib/copilot-co2.yaml||' /etc/otelcol-contrib/otelcol-contrib.conf
+sudo systemctl restart otelcol-contrib
+
+# Remove data
+sudo rm -rf /var/lib/otelcol-contrib/copilot-otel
+rm -rf ~/.local/share/copilot-otel
+```

@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Installs copilot-co2-trees by symlinking repo files into system locations
-# and enabling systemd user services.
+# Installs copilot-co2-trees by:
+# - Adding the collector config fragment alongside the main config
+# - Updating the collector service to load the additional config
+# - Symlinking the CO₂ script and timer into user locations
 
 repo_dir="$(cd "$(dirname "${0}")" && pwd)"
+otelcol_conf="/etc/otelcol-contrib/otelcol-contrib.conf"
+otelcol_config_dir="/etc/otelcol-contrib"
+traces_dir="/var/lib/otelcol-contrib/copilot-otel"
 
 function check_dependencies() {
     local _cmd
@@ -34,17 +39,34 @@ function create_symlink() {
     echo "  ${_dst} → ${_src}"
 }
 
-function install_links() {
-    echo "Creating symlinks..."
+function install_collector_config() {
+    echo "Installing collector config fragment..."
+
+    sudo ln -sf "${repo_dir}/config/otelcol-contrib/copilot-co2.yaml" \
+        "${otelcol_config_dir}/copilot-co2.yaml"
+    echo "  ${otelcol_config_dir}/copilot-co2.yaml → repo"
+
+    # Add our config to OTELCOL_OPTIONS if not already present
+    if ! grep -q "copilot-co2.yaml" "${otelcol_conf}" 2>/dev/null; then
+        sudo sed -i 's|^OTELCOL_OPTIONS=.*|& --config=/etc/otelcol-contrib/copilot-co2.yaml|' \
+            "${otelcol_conf}"
+        echo "  Updated ${otelcol_conf}"
+    else
+        echo "  ${otelcol_conf} already configured"
+    fi
+
+    # Create traces directory writable by the collector service
+    sudo mkdir -p "${traces_dir}"
+    sudo chown otelcol-contrib:otelcol-contrib "${traces_dir}"
+    sudo chmod 755 "${traces_dir}"
+    echo "  Created ${traces_dir}"
+}
+
+function install_user_components() {
+    echo "Installing user components..."
 
     create_symlink "${repo_dir}/bin/copilot-co2.sh" \
         "${HOME}/.local/bin/copilot-co2.sh"
-
-    create_symlink "${repo_dir}/config/otelcol/config.yaml" \
-        "${HOME}/.config/otelcol/config.yaml"
-
-    create_symlink "${repo_dir}/systemd/otelcol.service" \
-        "${HOME}/.config/systemd/user/otelcol.service"
 
     create_symlink "${repo_dir}/systemd/copilot-co2.service" \
         "${HOME}/.config/systemd/user/copilot-co2.service"
@@ -54,15 +76,12 @@ function install_links() {
 }
 
 function enable_services() {
-    echo "Reloading systemd user daemon..."
+    echo "Restarting collector..."
+    sudo systemctl restart otelcol-contrib
+
+    echo "Enabling CO₂ timer..."
     systemctl --user daemon-reload
-
-    echo "Enabling services..."
-    systemctl --user enable otelcol.service
     systemctl --user enable copilot-co2.timer
-
-    echo "Starting services..."
-    systemctl --user start otelcol.service
     systemctl --user start copilot-co2.timer
 }
 
@@ -80,7 +99,8 @@ function main() {
     echo ""
 
     check_dependencies
-    install_links
+    install_collector_config
+    install_user_components
     enable_services
     show_starship_hint
 

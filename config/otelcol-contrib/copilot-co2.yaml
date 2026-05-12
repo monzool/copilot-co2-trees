@@ -1,0 +1,18 @@
+# Config fragment for copilot-co2-trees.
+# Merged with the main /etc/otelcol-contrib/config.yaml via --config flag.
+# Adds a separate traces pipeline that writes to a local JSONL file.
+# The otlp receiver and batch processor are defined in the main config.
+
+exporters:
+  file/copilot:
+    path: /var/lib/otelcol-contrib/copilot-otel/traces.jsonl
+    rotation:
+      max_megabytes: 10
+      max_backups: 1
+
+service:
+  pipelines:
+    traces/copilot:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [file/copilot]
