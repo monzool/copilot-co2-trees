@@ -77,13 +77,22 @@ EOF
 }
 
 function update_display() {
+    local _grams="${cumulative_co2}"
+    local _int_grams
     local _display
-    if (( $(echo "${cumulative_co2} >= 1000" | bc -l) )); then
-        _display=$(echo "scale=1; ${cumulative_co2} / 1000" | bc)
+
+    _int_grams=${_grams%%.*}
+    _int_grams=${_int_grams:-0}
+
+    if (( _int_grams >= 1000 )); then
+        _display=$(echo "scale=1; ${_grams} / 1000" | bc)
         echo "${_display}kg CO₂" > "${display_file}"
-    else
-        _display=$(echo "scale=1; ${cumulative_co2}" | bc)
+    elif (( _int_grams >= 1 )); then
+        _display=$(echo "scale=1; ${_grams}" | bc)
         echo "${_display}g CO₂" > "${display_file}"
+    else
+        _display=$(echo "scale=1; ${_grams} * 1000" | bc)
+        echo "${_display}mg CO₂" > "${display_file}"
     fi
 }
 
