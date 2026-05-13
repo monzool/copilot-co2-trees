@@ -5,8 +5,8 @@ set -euo pipefail
 # from Copilot chat spans, and maintains a cumulative CO₂ estimate.
 # Reads the traces file without modifying it (offset-based).
 
-traces_file="/var/lib/otelcol-contrib/copilot-otel/traces.jsonl"
-state_dir="${HOME}/.local/share/copilot-otel"
+traces_file="${COPILOT_CO2_TRACES_FILE:-/var/lib/otelcol-contrib/copilot-otel/traces.jsonl}"
+state_dir="${COPILOT_CO2_STATE_DIR:-${HOME}/.local/share/copilot-otel}"
 state_file="${state_dir}/co2-state.json"
 display_file="${state_dir}/co2-state.txt"
 
