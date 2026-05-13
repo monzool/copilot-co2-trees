@@ -42,13 +42,14 @@ function create_symlink() {
 function install_collector_config() {
     echo "Installing collector config fragment..."
 
-    sudo ln -sf "${repo_dir}/config/otelcol-contrib/copilot-co2.yaml" \
+    sudo cp "${repo_dir}/config/otelcol-contrib/copilot-co2.yaml" \
         "${otelcol_config_dir}/copilot-co2.yaml"
-    echo "  ${otelcol_config_dir}/copilot-co2.yaml → repo"
+    sudo chown root:root "${otelcol_config_dir}/copilot-co2.yaml"
+    echo "  Copied to ${otelcol_config_dir}/copilot-co2.yaml"
 
     # Add our config to OTELCOL_OPTIONS if not already present
     if ! grep -q "copilot-co2.yaml" "${otelcol_conf}" 2>/dev/null; then
-        sudo sed -i 's|^OTELCOL_OPTIONS=.*|& --config=/etc/otelcol-contrib/copilot-co2.yaml|' \
+        sudo sed -i 's|"$| --config=/etc/otelcol-contrib/copilot-co2.yaml"|' \
             "${otelcol_conf}"
         echo "  Updated ${otelcol_conf}"
     else

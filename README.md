@@ -44,7 +44,7 @@ Verify: `otelcol-contrib --version`
 
 This will:
 
-1. Symlink the config fragment into `/etc/otelcol-contrib/` and update `OTELCOL_OPTIONS` to load it (requires sudo)
+1. Copy the config fragment into `/etc/otelcol-contrib/` and update `OTELCOL_OPTIONS` to load it (requires sudo)
 2. Create the traces directory at `/var/lib/otelcol-contrib/copilot-otel/`
 3. Restart the collector to pick up the new config
 4. Symlink the CO₂ script and timer into user locations
