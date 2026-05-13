@@ -135,7 +135,13 @@ function update_display() {
         _tree_label="tree"
     fi
 
-    echo "♨ ${_co2_display} CO₂ · 🌳 ${_trees} ${_tree_label}" > "${display_file}"
+    local _output="♨ ${_co2_display} CO₂ · 🌳 ${_trees} ${_tree_label}"
+    echo "${_output}" > "${display_file}"
+
+    # Print to stdout when run interactively (not from systemd/cron)
+    if [[ -t 1 ]]; then
+        echo "${_output}"
+    fi
 }
 
 function main() {
