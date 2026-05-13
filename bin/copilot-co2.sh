@@ -98,10 +98,10 @@ function update_display() {
         _co2_display=$(echo "scale=1; ${_grams} / 1000" | bc)
         _co2_display="${_co2_display}kg"
     elif (( _int_grams >= 1 )); then
-        _co2_display=$(echo "scale=1; ${_grams}" | bc)
+        _co2_display=$(echo "scale=1; ${_grams} / 1" | bc)
         _co2_display="${_co2_display}g"
     else
-        _co2_display=$(echo "scale=1; ${_grams} * 1000" | bc)
+        _co2_display=$(echo "scale=1; ${_grams} * 1000 / 1" | bc)
         _co2_display="${_co2_display}mg"
     fi
 
@@ -156,8 +156,9 @@ function main() {
         last_offset=0
     fi
 
-    # Nothing new to process
+    # Nothing new to process — still refresh display (tree count evolves over time)
     if (( _file_size == last_offset )); then
+        update_display
         exit 0
     fi
 
@@ -168,6 +169,7 @@ function main() {
 
     if [[ "${_new_tokens}" == "0" ]] || [[ -z "${_new_tokens}" ]]; then
         save_state
+        update_display
         exit 0
     fi
 
