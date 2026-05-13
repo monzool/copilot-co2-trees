@@ -164,7 +164,9 @@ function main() {
 
     # Nothing new to process — still refresh display (tree count evolves over time)
     if (( _file_size == last_offset )); then
-        update_display
+        if (( cumulative_tokens > 0 )); then
+            update_display
+        fi
         exit 0
     fi
 
@@ -175,7 +177,9 @@ function main() {
 
     if [[ "${_new_tokens}" == "0" ]] || [[ -z "${_new_tokens}" ]]; then
         save_state
-        update_display
+        if (( cumulative_tokens > 0 )); then
+            update_display
+        fi
         exit 0
     fi
 

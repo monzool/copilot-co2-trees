@@ -94,39 +94,44 @@ function configure_starship() {
     local _snippet="${repo_dir}/starship/co2-module.toml"
 
     if ! command -v starship &>/dev/null; then
-        echo "Starship not detected. To show CO₂ in your prompt:"
+        echo "Starship not detected. To show CO₂ in your prompt,"
+        echo "add the following to your Starship config:"
         echo ""
-        echo "  1. Copy and paste the following block at the end of your"
-        echo "     Starship config file (typically ${_config}):"
+        sed 's/^/  /' "${_snippet}"
         echo ""
-        sed 's/^/     /' "${_snippet}"
-        echo ""
-        echo "  2. No other changes are needed — Starship picks up"
-        echo "     [custom.*] sections automatically."
-        echo ""
+        show_starship_format_hint
         return
     fi
 
     if [[ -f "${_config}" ]] && grep -q '\[custom\.co2\]' "${_config}" 2>/dev/null; then
-        echo "  Starship CO₂ module already configured"
+        echo "  Starship [custom.co2] section already present"
+        show_starship_format_hint
         return
     fi
 
     echo ""
-    read -rp "Starship detected. Add CO₂ module to ${_config}? [Y/n] " _answer
+    read -rp "Starship detected. Add [custom.co2] section to ${_config}? [Y/n] " _answer
     _answer="${_answer:-Y}"
 
     if [[ "${_answer}" =~ ^[Yy]$ ]]; then
         echo "" >> "${_config}"
         cat "${_snippet}" >> "${_config}"
-        echo "  Added CO₂ module to ${_config}"
+        echo "  Added [custom.co2] section to ${_config}"
     else
-        echo "  Skipped. To add manually, paste the following block at the"
-        echo "  end of ${_config}:"
+        echo "  Skipped. To add manually, paste at the end of ${_config}:"
         echo ""
         sed 's/^/  /' "${_snippet}"
-        echo ""
     fi
+
+    echo ""
+    show_starship_format_hint
+}
+
+function show_starship_format_hint() {
+    echo "  If your starship.toml has a custom 'format' string, you also"
+    echo '  need to add ${custom.co2}\ to it — otherwise the module will'
+    echo "  not appear. Place it where you want it in the prompt layout,"
+    echo '  for example just before $line_break or the bar-closing segment.'
 }
 
 function main() {

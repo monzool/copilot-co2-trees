@@ -1,7 +1,12 @@
 # copilot-co2-trees 🌳
 
-Estimates cumulative CO₂ from VS Code Copilot usage and displays it in your
+Estimates cumulative CO₂ from VS Code Copilot usage and shows how many trees
+you'd need to offset your daily average — displayed in your
 [Starship](https://starship.rs/) prompt.
+
+```
+♨ 704.6g CO₂ · 🌳 12 trees
+```
 
 ```
 VS Code Copilot → OTel Collector → JSONL → CO₂ script → Starship prompt
