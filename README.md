@@ -101,6 +101,22 @@ The estimate is rough and intended for awareness, not precision.
 Token counts are extracted from `chat` spans in the OTel trace data
 (`gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens`).
 
+> **Note:** Only chat and agent interactions are counted. Inline code completions
+> (ghost text / autocomplete suggestions) are not exported via VS Code's OTel
+> telemetry, so the estimate will be lower than tools that track all Copilot usage.
+
+### Tree offset
+
+The 🌳 number shows how many mature broadleaf trees would be needed to absorb
+your **daily average** CO₂ emission rate:
+
+- **Tree absorption:** ~22 kg CO₂/year per tree ≈ 60 g/day
+- **Daily average:** cumulative CO₂ ÷ days since first collection
+- **Trees needed:** ⌈daily average ÷ 60⌉ (rounded up, minimum 1)
+
+As data accumulates over more days, the daily average smooths out and the tree
+count stabilises.
+
 ## How It Works
 
 The OTel Collector is the server — it creates port 4318 and waits for
