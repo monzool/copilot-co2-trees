@@ -89,12 +89,44 @@ function enable_services() {
     systemctl --user start copilot-co2.timer
 }
 
-function show_starship_hint() {
+function configure_starship() {
+    local _config="${HOME}/.config/starship.toml"
+    local _snippet="${repo_dir}/starship/co2-module.toml"
+
+    if ! command -v starship &>/dev/null; then
+        echo "Starship not detected. To show CO₂ in your prompt:"
+        echo ""
+        echo "  1. Copy and paste the following block at the end of your"
+        echo "     Starship config file (typically ${_config}):"
+        echo ""
+        sed 's/^/     /' "${_snippet}"
+        echo ""
+        echo "  2. No other changes are needed — Starship picks up"
+        echo "     [custom.*] sections automatically."
+        echo ""
+        return
+    fi
+
+    if [[ -f "${_config}" ]] && grep -q '\[custom\.co2\]' "${_config}" 2>/dev/null; then
+        echo "  Starship CO₂ module already configured"
+        return
+    fi
+
     echo ""
-    echo "Add the following to your ~/.config/starship.toml:"
-    echo ""
-    cat "${repo_dir}/starship/co2-module.toml"
-    echo ""
+    read -rp "Starship detected. Add CO₂ module to ${_config}? [Y/n] " _answer
+    _answer="${_answer:-Y}"
+
+    if [[ "${_answer}" =~ ^[Yy]$ ]]; then
+        echo "" >> "${_config}"
+        cat "${_snippet}" >> "${_config}"
+        echo "  Added CO₂ module to ${_config}"
+    else
+        echo "  Skipped. To add manually, paste the following block at the"
+        echo "  end of ${_config}:"
+        echo ""
+        sed 's/^/  /' "${_snippet}"
+        echo ""
+    fi
 }
 
 function main() {
@@ -106,7 +138,7 @@ function main() {
     install_collector_config
     install_user_components
     enable_services
-    show_starship_hint
+    configure_starship
 
     echo "Done. Ensure VS Code has OTel enabled:"
     echo '  "github.copilot.chat.otel.enabled": true'
