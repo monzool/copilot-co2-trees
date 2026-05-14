@@ -53,7 +53,12 @@ fn run() -> io::Result<()> {
     // Nothing new to process — still refresh display (tree count evolves over time)
     if file_size == state.last_offset {
         if state.cumulative_tokens > 0 {
-            write_display(&display_file, state.cumulative_co2_grams, state.started_at, now)?;
+            write_display(
+                &display_file,
+                state.cumulative_co2_grams,
+                state.started_at,
+                now,
+            )?;
         }
         return Ok(());
     }
@@ -71,7 +76,12 @@ fn run() -> io::Result<()> {
         state.last_updated = now;
         state::save_state(&state_file, &state)?;
         if state.cumulative_tokens > 0 {
-            write_display(&display_file, state.cumulative_co2_grams, state.started_at, now)?;
+            write_display(
+                &display_file,
+                state.cumulative_co2_grams,
+                state.started_at,
+                now,
+            )?;
         }
         return Ok(());
     }
@@ -82,7 +92,12 @@ fn run() -> io::Result<()> {
     state.last_updated = now;
 
     state::save_state(&state_file, &state)?;
-    write_display(&display_file, state.cumulative_co2_grams, state.started_at, now)?;
+    write_display(
+        &display_file,
+        state.cumulative_co2_grams,
+        state.started_at,
+        now,
+    )?;
 
     Ok(())
 }

@@ -15,7 +15,11 @@ fn format_co2(grams: f64) -> String {
 }
 
 /// Calculate number of trees needed to offset the daily average CO₂ rate.
-fn trees_needed(co2_grams: f64, started_at: DateTime<FixedOffset>, now: DateTime<FixedOffset>) -> u64 {
+fn trees_needed(
+    co2_grams: f64,
+    started_at: DateTime<FixedOffset>,
+    now: DateTime<FixedOffset>,
+) -> u64 {
     let days_elapsed = (now - started_at).num_days().max(1) as f64;
     let daily_avg = co2_grams / days_elapsed;
     let trees = (daily_avg / TREE_ABSORPTION_GRAMS_PER_DAY).ceil() as u64;
@@ -90,7 +94,10 @@ mod tests {
             ts("2026-05-14T01:00:00+02:00"),
         );
         assert!(output.contains("1 tree"), "expected '1 tree' in: {output}");
-        assert!(!output.contains("trees"), "should not contain 'trees' in: {output}");
+        assert!(
+            !output.contains("trees"),
+            "should not contain 'trees' in: {output}"
+        );
     }
 
     #[test]

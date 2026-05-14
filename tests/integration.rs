@@ -240,8 +240,14 @@ fn display_shows_grams_for_values_above_1g() {
 
     let display = env.display_text();
     assert!(display.contains("g CO₂"), "expected 'g CO₂' in: {display}");
-    assert!(!display.contains("mg"), "should not contain mg in: {display}");
-    assert!(!display.contains("kg"), "should not contain kg in: {display}");
+    assert!(
+        !display.contains("mg"),
+        "should not contain mg in: {display}"
+    );
+    assert!(
+        !display.contains("kg"),
+        "should not contain kg in: {display}"
+    );
 }
 
 #[test]
@@ -261,7 +267,10 @@ fn display_shows_kilograms_for_values_above_1000g() {
     assert!(output.status.success());
 
     let display = env.display_text();
-    assert!(display.contains("kg CO₂"), "expected 'kg CO₂' in: {display}");
+    assert!(
+        display.contains("kg CO₂"),
+        "expected 'kg CO₂' in: {display}"
+    );
 }
 
 // ── Tree calculation ────────────────────────────────────────────────
@@ -274,7 +283,10 @@ fn shows_singular_tree_when_only_1_needed() {
     assert!(output.status.success());
 
     let display = env.display_text();
-    assert!(display.contains("1 tree"), "expected '1 tree' in: {display}");
+    assert!(
+        display.contains("1 tree"),
+        "expected '1 tree' in: {display}"
+    );
     assert!(
         !display.contains("trees"),
         "should not contain 'trees' in: {display}"
