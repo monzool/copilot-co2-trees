@@ -12,14 +12,13 @@ you'd need to offset your daily average - displayed in your
 
 
 ```
-VS Code Copilot → OTel Collector → JSONL → CO₂ script → Starship prompt
+VS Code Copilot → OTel Collector → JSONL → CO₂ binary → Starship prompt
                   (systemd user)           (systemd timer)
 ```
 
 ## Prerequisites
 
-- **jq** - JSON processing
-- **bc** - arithmetic
+- **Rust toolchain** (cargo) - for building from source
 - **otelcol-contrib** - OpenTelemetry Collector (see below)
 - **Starship** - cross-shell prompt
 
@@ -52,12 +51,13 @@ Verify: `otelcol-contrib --version`
 
 This will:
 
-1. Copy the config fragment into `/etc/otelcol-contrib/` and update `OTELCOL_OPTIONS` to load it (requires sudo)
-2. Create the traces directory at `/var/lib/otelcol-contrib/copilot-otel/`
-3. Restart the collector to pick up the new config
-4. Symlink the CO₂ script and timer into user locations
-5. Enable and start the CO₂ timer
-6. Optionally add the Starship `[custom.co2]` module to `~/.config/starship.toml`
+1. Build the Rust binary (`cargo build --release`)
+2. Copy the config fragment into `/etc/otelcol-contrib/` and update `OTELCOL_OPTIONS` to load it (requires sudo)
+3. Create the traces directory at `/var/lib/otelcol-contrib/copilot-otel/`
+4. Restart the collector to pick up the new config
+5. Copy the binary to `~/.local/bin/` and symlink the systemd units
+6. Enable and start the CO₂ timer
+7. Optionally add the Starship `[custom.co2]` module to `~/.config/starship.toml`
 
 ### What gets installed
 
@@ -69,9 +69,9 @@ This will:
 
 **User-level:**
 
-| Source (repo) | Target |
+| Source | Target |
 |---|---|
-| `bin/copilot-co2.sh` | `~/.local/bin/copilot-co2.sh` |
+| `target/release/copilot-co2-trees` | `~/.local/bin/copilot-co2-trees` (copied) |
 | `systemd/copilot-co2.service` | `~/.config/systemd/user/copilot-co2.service` |
 | `systemd/copilot-co2.timer` | `~/.config/systemd/user/copilot-co2.timer` |
 
@@ -165,8 +165,8 @@ systemctl --user stop copilot-co2.timer
 systemctl --user disable copilot-co2.timer
 systemctl --user daemon-reload
 
-# Remove user symlinks
-rm ~/.local/bin/copilot-co2.sh
+# Remove user binary and symlinks
+rm ~/.local/bin/copilot-co2-trees
 rm ~/.config/systemd/user/copilot-co2.{service,timer}
 
 # Remove collector config fragment and revert OTELCOL_OPTIONS
