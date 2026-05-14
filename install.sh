@@ -2,9 +2,10 @@
 set -euo pipefail
 
 # Installs copilot-co2-trees by:
+# - Building the Rust binary (requires cargo)
 # - Adding the collector config fragment alongside the main config
 # - Updating the collector service to load the additional config
-# - Symlinking the CO₂ script and timer into user locations
+# - Installing the binary and systemd units into user locations
 
 repo_dir="$(cd "$(dirname "${0}")" && pwd)"
 otelcol_conf="/etc/otelcol-contrib/otelcol-contrib.conf"
@@ -13,13 +14,19 @@ traces_dir="/var/lib/otelcol-contrib/copilot-otel"
 
 function check_dependencies() {
     local _cmd
-    for _cmd in jq bc otelcol-contrib; do
+    for _cmd in cargo otelcol-contrib; do
         if ! command -v "${_cmd}" &>/dev/null; then
             echo "Error: ${_cmd} is required but not found in PATH" >&2
             echo "See README.md for installation instructions." >&2
             exit 1
         fi
     done
+}
+
+function build_binary() {
+    echo "Building copilot-co2-trees..."
+    cargo build --release --manifest-path "${repo_dir}/Cargo.toml"
+    echo "  Build complete"
 }
 
 function create_symlink() {
@@ -69,8 +76,12 @@ function install_collector_config() {
 function install_user_components() {
     echo "Installing user components..."
 
-    create_symlink "${repo_dir}/bin/copilot-co2.sh" \
-        "${HOME}/.local/bin/copilot-co2.sh"
+    local _bin_dir="${HOME}/.local/bin"
+    local _dst="${_bin_dir}/copilot-co2-trees"
+    mkdir -p "${_bin_dir}"
+    cp "${repo_dir}/target/release/copilot-co2-trees" "${_dst}"
+    chmod +x "${_dst}"
+    echo "  ${_dst} (copied)"
 
     create_symlink "${repo_dir}/systemd/copilot-co2.service" \
         "${HOME}/.config/systemd/user/copilot-co2.service"
@@ -140,6 +151,7 @@ function main() {
     echo ""
 
     check_dependencies
+    build_binary
     install_collector_config
     install_user_components
     enable_services
