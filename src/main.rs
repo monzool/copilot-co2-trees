@@ -1,4 +1,5 @@
 mod co2;
+mod display;
 mod state;
 mod tokens;
 
