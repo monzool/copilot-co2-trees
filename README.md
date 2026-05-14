@@ -1,12 +1,15 @@
 # copilot-co2-trees 🌳
 
 Estimates cumulative CO₂ from VS Code Copilot usage and shows how many trees
-you'd need to offset your daily average — displayed in your
+you'd need to offset your daily average - displayed in your
 [Starship](https://starship.rs/) prompt.
 
-```
-♨ 704.6g CO₂ · 🌳 12 trees
-```
+
+![Starship promt with CO2 and tree count](starship_co2_trees.png)
+
+
+## Pipeline
+
 
 ```
 VS Code Copilot → OTel Collector → JSONL → CO₂ script → Starship prompt
@@ -15,10 +18,10 @@ VS Code Copilot → OTel Collector → JSONL → CO₂ script → Starship promp
 
 ## Prerequisites
 
-- **jq** — JSON processing
-- **bc** — arithmetic
-- **otelcol-contrib** — OpenTelemetry Collector (see below)
-- **Starship** — cross-shell prompt
+- **jq** - JSON processing
+- **bc** - arithmetic
+- **otelcol-contrib** - OpenTelemetry Collector (see below)
+- **Starship** - cross-shell prompt
 
 ## Installing the OpenTelemetry Collector
 
@@ -37,7 +40,7 @@ sudo dpkg -i otelcol-contrib_0.151.0_linux_amd64.deb
 ```
 
 The package installs a system-level service. This project extends that service
-with an additional config fragment — no need to disable it.
+with an additional config fragment - no need to disable it.
 
 Verify: `otelcol-contrib --version`
 
@@ -54,7 +57,7 @@ This will:
 3. Restart the collector to pick up the new config
 4. Symlink the CO₂ script and timer into user locations
 5. Enable and start the CO₂ timer
-6. Print the Starship config snippet to add to `~/.config/starship.toml`
+6. Optionally add the Starship `[custom.co2]` module to `~/.config/starship.toml`
 
 ### What gets installed
 
@@ -85,15 +88,23 @@ Enable OTel export in VS Code settings:
 
 ## Starship Configuration
 
-Add to `~/.config/starship.toml`:
+Add the `[custom.co2]` section to `~/.config/starship.toml`:
 
 ```toml
 [custom.co2]
 command = "cat ~/.local/share/copilot-otel/co2-state.txt"
 when = "test -f ~/.local/share/copilot-otel/co2-state.txt"
-format = "🌳 [$output]($style) "
-style = "green"
+format = "[ $output ]($style)"
+style = "bg:color_green fg:color_fg0"
 ```
+
+> **Note:** The `style` above uses palette variables from the gruvbox theme.
+> Adjust to match your Starship theme, e.g. `style = "green"` for a plain color.
+
+If your `starship.toml` has a custom `format` string, you also need to add
+`${custom.co2}\` to it — otherwise the module won't appear. Place it where you
+want it in the prompt layout, for example just before `$line_break` or the
+bar-closing segment.
 
 ## CO₂ Estimation Model
 
@@ -124,11 +135,11 @@ count stabilises.
 
 ## How It Works
 
-The OTel Collector is the server — it creates port 4318 and waits for
+The OTel Collector is the server - it creates port 4318 and waits for
 connections. VS Code is the client that sends telemetry data to it. If VS Code
 isn't running or has OTel disabled, nothing connects and the collector simply
-idles. In the reverse scenario — VS Code has OTel enabled but the collector
-isn't running — VS Code silently drops the telemetry with no errors.
+idles. In the reverse scenario - VS Code has OTel enabled but the collector
+isn't running - VS Code silently drops the telemetry with no errors.
 
 ## Checking Status
 
